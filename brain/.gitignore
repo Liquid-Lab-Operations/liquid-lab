@@ -1,0 +1,15 @@
+# Obsidian local files (DO NOT SYNC)
+.obsidian/cache
+.obsidian/plugins
+.obsidian/bookmarks.json
+.obsidian/appearance.json
+.obsidian/community-plugins.json
+.obsidian/core-plugins-migration.json
+.obsidian/core-plugins.json
+.obsidian/hotkeys.json
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+
+# System files
+.DS_Store
+.trash/
