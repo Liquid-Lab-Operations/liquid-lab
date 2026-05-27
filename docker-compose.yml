@@ -1,0 +1,100 @@
+version: '3.9'
+
+services:
+  # Ollama — Local LLM inference engine (8 models)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: liquid-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_NUM_PARALLEL=4
+      - OLLAMA_NUM_GPU=0  # Set to >0 if GPU available
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - liquid-lab
+
+  # Next.js App — Model Router + API
+  app:
+    build:
+      context: ./code
+      dockerfile: Dockerfile
+    container_name: liquid-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - OLLAMA_URL=http://ollama:11434
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY}
+    depends_on:
+      ollama:
+        condition: service_healthy
+    volumes:
+      - ./code:/app
+      - /app/node_modules
+    networks:
+      - liquid-lab
+
+  # Prometheus — Metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: liquid-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - liquid-lab
+
+  # Grafana — Dashboard & visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: liquid-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana-dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./infra/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+    depends_on:
+      - prometheus
+    networks:
+      - liquid-lab
+
+  # PostgreSQL — Optional database for structured data
+  postgres:
+    image: postgres:15-alpine
+    container_name: liquid-postgres
+    environment:
+      - POSTGRES_USER=liquid
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-development}
+      - POSTGRES_DB=liquid_lab
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - liquid-lab
+
+volumes:
+  ollama_data:
+  prometheus_data:
+  grafana_data:
+  postgres_data:
+
+networks:
+  liquid-lab:
+    driver: bridge
