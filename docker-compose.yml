@@ -14,9 +14,10 @@ services:
       - OLLAMA_NUM_GPU=0  # Set to >0 if GPU available
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
     networks:
       - liquid-lab
 
@@ -33,8 +34,7 @@ services:
       - OLLAMA_URL=http://ollama:11434
       - CLAUDE_API_KEY=${CLAUDE_API_KEY}
     depends_on:
-      ollama:
-        condition: service_healthy
+      - ollama
     volumes:
       - ./code:/app
       - /app/node_modules
@@ -88,6 +88,22 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - liquid-lab
+
+  # Ollama Model Initializer — pulls 8 models on first run
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: liquid-ollama-init
+    entrypoint: /init-models.sh
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+    volumes:
+      - ./infra/ollama-init.sh:/init-models.sh:ro
+      - ollama_data:/root/.ollama
+    depends_on:
+      - ollama
+    networks:
+      - liquid-lab
+    restart: "no"
 
 volumes:
   ollama_data:

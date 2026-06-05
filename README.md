@@ -34,10 +34,25 @@ curl http://localhost:3000/api/health  # App
 - **Integrations:** WhatsApp, Slack (via MCP)
 - **Knowledge:** Obsidian vault with neurônios
 
+## Security Architecture
+
+🔐 **All applications run inside Nemoclaw sandboxes** (not on host).
+
+- **Policy:** [ADR-001: Nemoclaw Security](docs/ADR-001-NEMOCLAW-SECURITY.md)
+- **Operations:** [Operational Security Guide](docs/OPERATIONAL-SECURITY.md)
+- **Sandboxes:** Isolated, auditable, secure
+- **Host:** Clean (only essentials: Git, Homebrew, Shell, IDE)
+
+See [ADR-001](docs/ADR-001-NEMOCLAW-SECURITY.md) for details.
+
 ## Documentation
 
-See `.claude/CLAUDE.md` for full technical documentation.
+- **Architecture Decisions:** `docs/ADR-001-NEMOCLAW-SECURITY.md`
+- **Operations Guide:** `docs/OPERATIONAL-SECURITY.md`
+- **Technical Details:** `.claude/CLAUDE.md`
+- **Knowledge Base:** `brain/` (Obsidian vault)
 
 ---
 
-*Liquid Lab — Knowledge Team Infrastructure*
+*Liquid Lab — Knowledge Team Infrastructure*  
+*Nemoclaw-secured, sandbox-based, enterprise-ready.*

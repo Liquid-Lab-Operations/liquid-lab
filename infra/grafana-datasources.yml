@@ -1,0 +1,24 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      timeInterval: 15s
+    editable: true
+
+  - name: Postgres
+    type: postgres
+    access: proxy
+    database: liquid_lab
+    user: liquid
+    password: ${DB_PASSWORD}
+    url: postgres:5432
+    jsonData:
+      sslmode: disable
+    secureJsonData:
+      password: ${DB_PASSWORD}
+    editable: true
