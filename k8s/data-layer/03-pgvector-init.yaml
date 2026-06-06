@@ -1,0 +1,52 @@
+---
+# ConfigMap com script SQL para pgvector
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgvector-init
+  namespace: data-layer
+data:
+  pgvector-init.sql: |
+    -- Install pgvector extension
+    CREATE EXTENSION IF NOT EXISTS vector;
+
+    -- Embeddings table for knowledge base
+    CREATE TABLE IF NOT EXISTS embeddings (
+      id SERIAL PRIMARY KEY,
+      document_id INTEGER REFERENCES documents(id) ON DELETE CASCADE,
+      content TEXT NOT NULL,
+      embedding vector(1536), -- OpenAI/Claude embeddings size
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Indexes for efficient search
+    CREATE INDEX IF NOT EXISTS idx_embeddings_document_id ON embeddings(document_id);
+    CREATE INDEX IF NOT EXISTS idx_embeddings_embedding ON embeddings USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+
+    -- RAG cache table
+    CREATE TABLE IF NOT EXISTS rag_cache (
+      id SERIAL PRIMARY KEY,
+      query_hash VARCHAR(64) UNIQUE NOT NULL,
+      query_text TEXT NOT NULL,
+      retrieved_docs JSONB NOT NULL,
+      response TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      expires_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP + INTERVAL '7 days'
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_rag_cache_query_hash ON rag_cache(query_hash);
+    CREATE INDEX IF NOT EXISTS idx_rag_cache_expires_at ON rag_cache(expires_at);
+
+    -- Agent memory table
+    CREATE TABLE IF NOT EXISTS agent_memory (
+      id SERIAL PRIMARY KEY,
+      agent_id INTEGER REFERENCES agents(id) ON DELETE CASCADE,
+      context_type VARCHAR(50), -- 'conversation', 'decision', 'tool_result'
+      context_data JSONB NOT NULL,
+      embedding vector(1536),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_agent_memory_agent_id ON agent_memory(agent_id);
+    CREATE INDEX IF NOT EXISTS idx_agent_memory_type ON agent_memory(context_type);
