@@ -1,0 +1,206 @@
+version: '3.9'
+
+# PHASE 1 — FOUNDATION (Nemoclaw-First via Docker Compose)
+# All services isolated, secured, monitored
+
+services:
+  # ════════════════════════════════════════════════════════════
+  # 1. DATA LAYER — PostgreSQL + Redis
+  # ════════════════════════════════════════════════════════════
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: liquid-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-liquid}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev-only-change}
+      POSTGRES_DB: ${DB_NAME:-liquid_lab}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-liquid}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - liquid-lab
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: liquid-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - liquid-lab
+    restart: unless-stopped
+
+  # ════════════════════════════════════════════════════════════
+  # 2. CLAUDE API WRAPPER — Centralized Claude Access
+  # ════════════════════════════════════════════════════════════
+
+  claude-api:
+    build:
+      context: ./services/claude-api
+      dockerfile: Dockerfile
+    container_name: liquid-claude-api
+    environment:
+      PORT: 3000
+      NODE_ENV: ${NODE_ENV:-development}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      CACHE_ENABLED: "true"
+      CACHE_TTL: "3600"
+      RATE_LIMIT: "100/minute"
+      LOG_LEVEL: info
+    ports:
+      - "3010:3000"
+    volumes:
+      - ./services/claude-api:/app
+      - /app/node_modules
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - liquid-lab
+    restart: unless-stopped
+    depends_on:
+      - postgres
+
+  # ════════════════════════════════════════════════════════════
+  # 3. LIQUID LAB API — Next.js + Model Router
+  # ════════════════════════════════════════════════════════════
+
+  liquid-lab-api:
+    build:
+      context: ./code
+      dockerfile: Dockerfile.nemoclaw
+    container_name: liquid-app
+    environment:
+      PORT: 3000
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: postgresql://${DB_USER:-liquid}:${DB_PASSWORD:-dev-only-change}@postgres:5432/${DB_NAME:-liquid_lab}
+      REDIS_URL: redis://redis:6379
+      CLAUDE_API_URL: http://claude-api:3000
+      CLAUDE_API_KEY: ${ANTHROPIC_API_KEY}
+      LOG_LEVEL: info
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./code:/app
+      - /app/node_modules
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - liquid-lab
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      claude-api:
+        condition: service_healthy
+
+  # ════════════════════════════════════════════════════════════
+  # 4. OBSERVABILITY — Prometheus + Grafana + Loki
+  # ════════════════════════════════════════════════════════════
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: liquid-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    networks:
+      - liquid-lab
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: liquid-grafana
+    ports:
+      - "3100:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana:/etc/grafana/provisioning:ro
+    networks:
+      - liquid-lab
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  loki:
+    image: grafana/loki:latest
+    container_name: liquid-loki
+    ports:
+      - "3200:3100"
+    volumes:
+      - ./infra/loki-config.yml:/etc/loki/local-config.yml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yml
+    networks:
+      - liquid-lab
+    restart: unless-stopped
+
+  # ════════════════════════════════════════════════════════════
+  # Optional: Ollama (Local LLM for testing, not production)
+  # ════════════════════════════════════════════════════════════
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: liquid-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      OLLAMA_NUM_PARALLEL: 2
+      OLLAMA_NUM_GPU: 0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks:
+      - liquid-lab
+    restart: unless-stopped
+    profiles:
+      - optional
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  ollama_data:
+
+networks:
+  liquid-lab:
+    driver: bridge
