@@ -28,8 +28,8 @@ Todos os commits feitos aqui vão aparecer como se enviados por operations@liqui
 Mesma configuração aplicada a:
 - liquid-lab-brain
 - liquid-lab-infra
-- liquid-lab-mcp-whatsapp
 - liquid-lab-mcp-slack
+- liquid-lab-mcp-whatsapp
 
 ## Próximo Passo
 

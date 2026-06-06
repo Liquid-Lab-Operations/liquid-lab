@@ -26,10 +26,10 @@ Todos os commits feitos aqui vão aparecer como se enviados por operations@liqui
 ## Outros Repos
 
 Mesma configuração aplicada a:
-- liquid-lab-code
 - liquid-lab-brain
-- liquid-lab-mcp-whatsapp
+- liquid-lab-code
 - liquid-lab-mcp-slack
+- liquid-lab-mcp-whatsapp
 
 ## Próximo Passo
 
