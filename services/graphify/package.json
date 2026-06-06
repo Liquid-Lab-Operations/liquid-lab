@@ -1,0 +1,21 @@
+{
+  "name": "@liquid-lab/graphify-service",
+  "version": "1.0.0",
+  "description": "Knowledge Graph Analysis Service for Liquid Lab (runs in Nemoclaw)",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "analyze": "node src/analyze.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.4.0",
+    "dotenv": "^16.0.3",
+    "uuid": "^9.0.0",
+    "node-fetch": "^3.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}

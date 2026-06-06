@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: graphify
+  namespace: liquid-lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: graphify
+  template:
+    metadata:
+      labels:
+        app: graphify
+    spec:
+      containers:
+      - name: graphify
+        image: graphify:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 7000
+          name: http
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "7000"
+        - name: OUTPUT_DIR
+          value: "/nemoclaw/graphify-out"
+        volumeMounts:
+        - name: graphify-output
+          mountPath: /nemoclaw/graphify-out
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 7000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 7000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      volumes:
+      - name: graphify-output
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: graphify
+  namespace: liquid-lab
+spec:
+  selector:
+    app: graphify
+  ports:
+  - protocol: TCP
+    port: 7000
+    targetPort: 7000
+    name: http
+  type: ClusterIP
