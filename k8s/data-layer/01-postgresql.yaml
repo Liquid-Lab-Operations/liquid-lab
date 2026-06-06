@@ -1,0 +1,146 @@
+---
+# PostgreSQL StatefulSet
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  namespace: data-layer
+data:
+  init.sql: |
+    -- Liquid Lab Schema
+    CREATE TABLE IF NOT EXISTS documents (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      content TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS agents (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      status VARCHAR(50),
+      last_activity TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS agent_logs (
+      id SERIAL PRIMARY KEY,
+      agent_id INTEGER REFERENCES agents(id),
+      message TEXT,
+      level VARCHAR(20),
+      timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX idx_documents_created ON documents(created_at);
+    CREATE INDEX idx_agents_status ON agents(status);
+    CREATE INDEX idx_agent_logs_agent_id ON agent_logs(agent_id);
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: data-layer
+  labels:
+    app: postgres
+spec:
+  clusterIP: None
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+    name: postgres
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: data-layer
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      serviceAccountName: postgres
+      securityContext:
+        fsGroup: 999
+        runAsUser: 999
+        runAsNonRoot: true
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        ports:
+        - containerPort: 5432
+          name: postgres
+        env:
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: database
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: username
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: 2000m
+            memory: 2Gi
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U $POSTGRES_USER
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U $POSTGRES_USER
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 1
+          failureThreshold: 3
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        - name: init-scripts
+          mountPath: /docker-entrypoint-initdb.d
+      volumes:
+      - name: init-scripts
+        configMap:
+          name: postgres-init
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-storage
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi

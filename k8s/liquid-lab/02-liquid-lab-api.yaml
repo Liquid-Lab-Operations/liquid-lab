@@ -1,0 +1,110 @@
+---
+# Liquid Lab API Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: liquid-lab-api
+  namespace: liquid-lab
+  labels:
+    app: liquid-lab-api
+spec:
+  selector:
+    app: liquid-lab-api
+  ports:
+  - port: 3000
+    targetPort: 3000
+    name: http
+  type: ClusterIP
+
+---
+# Liquid Lab API Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: liquid-lab-api
+  namespace: liquid-lab
+  labels:
+    app: liquid-lab-api
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: liquid-lab-api
+  template:
+    metadata:
+      labels:
+        app: liquid-lab-api
+    spec:
+      serviceAccountName: liquid-lab-api
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: api
+        image: liquid-lab-liquid-lab-api:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+          name: http
+        env:
+        - name: PORT
+          value: "3000"
+        - name: NODE_ENV
+          value: "production"
+        - name: DATABASE_URL
+          value: "postgresql://liquid:liquidlab-secure-password-change-in-prod@postgres.data-layer.svc.cluster.local:5432/liquid_lab"
+        - name: REDIS_URL
+          value: "redis://redis.data-layer.svc.cluster.local:6379"
+        - name: CLAUDE_API_URL
+          value: "http://claude-api:3000"
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: claude-credentials
+              key: api-key
+        - name: LOG_LEVEL
+          value: "info"
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          tcpSocket:
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 1
+          failureThreshold: 2
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: nextjs-cache
+          mountPath: /.next
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: nextjs-cache
+        emptyDir: {}
+      terminationGracePeriodSeconds: 30

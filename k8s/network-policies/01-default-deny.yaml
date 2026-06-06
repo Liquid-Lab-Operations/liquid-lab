@@ -1,0 +1,116 @@
+---
+# Default Deny All (liquid-lab namespace)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: liquid-lab
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+
+---
+# Default Deny All (data-layer namespace)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: data-layer
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+
+---
+# Allow: liquid-lab pods can egress to data-layer (PostgreSQL + Redis)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-data-layer
+  namespace: liquid-lab
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  # Allow DNS
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: UDP
+      port: 53
+  # Allow to data-layer namespace
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: data-layer
+    ports:
+    - protocol: TCP
+      port: 5432
+    - protocol: TCP
+      port: 6379
+
+---
+# Allow: API service accepts external traffic on port 3000
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-ingress
+  namespace: liquid-lab
+spec:
+  podSelector:
+    matchLabels:
+      app: liquid-lab-api
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 3000
+
+---
+# Allow: claude-api service accepts from liquid-lab
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-claude-api-ingress
+  namespace: liquid-lab
+spec:
+  podSelector:
+    matchLabels:
+      app: claude-api
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 3000
+
+---
+# Allow: data-layer can accept from liquid-lab
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-liquid-lab
+  namespace: data-layer
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: liquid-lab
+    ports:
+    - protocol: TCP
+      port: 5432
+    - protocol: TCP
+      port: 6379

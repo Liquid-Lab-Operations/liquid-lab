@@ -1,0 +1,100 @@
+---
+# Claude API Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: claude-api
+  namespace: liquid-lab
+  labels:
+    app: claude-api
+spec:
+  selector:
+    app: claude-api
+  ports:
+  - port: 3000
+    targetPort: 3000
+    name: http
+  type: ClusterIP
+
+---
+# Claude API Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: claude-api
+  namespace: liquid-lab
+  labels:
+    app: claude-api
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: claude-api
+  template:
+    metadata:
+      labels:
+        app: claude-api
+    spec:
+      serviceAccountName: claude-api
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: claude-api
+        image: liquid-lab-claude-api:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+          name: http
+        env:
+        - name: PORT
+          value: "3000"
+        - name: NODE_ENV
+          value: "production"
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: claude-credentials
+              key: api-key
+        - name: LOG_LEVEL
+          value: "info"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        livenessProbe:
+          tcpSocket:
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 1
+          failureThreshold: 2
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      terminationGracePeriodSeconds: 30
