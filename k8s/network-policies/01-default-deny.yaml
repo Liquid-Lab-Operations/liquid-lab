@@ -94,6 +94,65 @@ spec:
       port: 3000
 
 ---
+# Allow: hermes-agent accepts from liquid-lab
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-hermes-agent-ingress
+  namespace: liquid-lab
+spec:
+  podSelector:
+    matchLabels:
+      app: hermes-agent
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 3001
+
+---
+# Allow: hermes-agent can access external APIs
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-hermes-agent-egress
+  namespace: liquid-lab
+spec:
+  podSelector:
+    matchLabels:
+      app: hermes-agent
+  policyTypes:
+  - Egress
+  egress:
+  # Allow DNS
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: UDP
+      port: 53
+  # Allow to data-layer
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: data-layer
+    ports:
+    - protocol: TCP
+      port: 5432
+    - protocol: TCP
+      port: 6379
+  # Allow to Claude API
+  - to:
+    - podSelector:
+        matchLabels:
+          app: claude-api
+    ports:
+    - protocol: TCP
+      port: 3000
+
+---
 # Allow: data-layer can accept from liquid-lab
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
