@@ -1,8 +1,8 @@
-# Git Configuration — Dual Account Setup
+# Git Configuration — Monorepo Setup
 
-**Repositório:** liquid-lab-mcp-slack  
-**Mantido em:** MarceloPivovar (acesso simples)  
-**Commits aparecem como:** operations@liquidlab.ag (identidade corporativa)
+**Repositório:** liquid-lab (monorepo único)  
+**Caminho:** /mcp/slack  
+**Identidade Git:** operations@liquidlab.ag (corporativa)
 
 ## Status Atual
 
@@ -14,23 +14,36 @@ $ git config user.name
 Liquid Lab Operations
 ```
 
-Todos os commits feitos aqui vão aparecer como se enviados por operations@liquidlab.ag, mesmo que você esteja fazendo push com sua conta pessoal MarceloPivovar.
+## Estrutura
 
-## Por que assim?
+Liquid Lab é um **monorepo único** com um `.git` na raiz:
 
-- Você tem acesso total em seu usuário pessoal (marcelopivovar)
-- A organização Liquid-Lab-Ag é mantida como backup futuro
-- Quando Marina receber seu MacBook, ela clona normalmente e pode contribuir
-- Quando operations@liquidlab.ag tiver sua máquina, transferimos legalmente
+```
+liquid-lab/
+├── .git/           ← UM repositório para tudo
+├── code/           ← Subpasta (Next.js app)
+├── brain/          ← Subpasta (Obsidian vault)
+├── infra/          ← Subpasta (DevOps)
+├── mcp/            ← Subpasta (MCP servers)
+│   ├── whatsapp/
+│   └── slack/      ← VOCÊ ESTÁ AQUI
+└── docs/           ← Subpasta (documentation)
+```
 
-## Outros Repos
+## Identidade Corporativa
 
-Mesma configuração aplicada a:
-- liquid-lab-code
-- liquid-lab-brain
-- liquid-lab-infra
-- liquid-lab-mcp-whatsapp
+Todos os commits em QUALQUER subpasta aparecem como:
+- **Email:** operations@liquidlab.ag
+- **Nome:** Liquid Lab Operations
+
+Isso é verdadeiro se você usa sua conta pessoal MarceloPivovar ou qualquer outra conta.
+
+## Acesso
+
+- **Atualmente:** MarceloPivovar (acesso pessoal → commits corporativos)
+- **Quando Marina receber MacBook:** Ela clona e contribui (commits corporativos)
+- **Transferência futura:** operations@liquidlab.ag terá acesso direto
 
 ## Próximo Passo
 
-Todos os repos estão prontos. Você pode começar a trabalhar normalmente—commits vão refletir o autor corporativo automaticamente.
+Trabalhe normalmente em qualquer subpasta—todos os commits refletem a identidade corporativa.

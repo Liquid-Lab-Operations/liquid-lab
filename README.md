@@ -1,12 +1,13 @@
 # Liquid Lab — Monorepo Corporativo
 
-**Status:** 🟢 Fresh Start (May 2026)
+**Status:** ✅ 100% Automated (June 2026)
 
-Monorepo consolidado com:
+Monorepo com automação end-to-end:
 - **code/** — Next.js core app + Model Router
-- **brain/** — Obsidian knowledge vault
+- **brain/** — Obsidian knowledge vault (auto-captured)
 - **infra/** — DevOps (Docker, K8s, Monitoring)
 - **mcp/** — MCP servers (WhatsApp, Slack)
+- **.claude/** — Automação, hooks, documentação
 
 ## Quick Start
 
