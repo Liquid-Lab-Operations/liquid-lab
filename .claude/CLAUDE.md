@@ -1,6 +1,6 @@
 # Liquid Lab — Monorepo Corporativo
 **Repositório:** https://github.com/Operations-Liquid-Lab/liquid-lab  
-**Última atualização:** 2026-05-27
+**Última atualização:** 2026-06-07
 
 ---
 
@@ -85,6 +85,52 @@ liquid-lab/
 - Channel strategy: #alerts, #deployments, #status
 - Rich message formatting
 - Event handling para interações
+
+---
+
+## 🎨 Brand & Identity
+
+**Definição:** Independent Business Boutique — Specialized, exclusive laboratory offering customized and specialized creative solutions. Quality over quantity, expertise over breadth, personal touch over mass service.
+
+**Propósito:** Transformar os desafios do mundo em soluções fluidas & inteligentes
+(Transform world's challenges into fluid & intelligent solutions)
+
+**Posicionamento:** Criar uma cultura em que problemas complexos sejam vistos como uma oportunidade de inovar. Os maiores saltos criativos nascem dos desafios mais difíceis.
+
+**Público:** Pessoas exigentes que sabem o que querem e buscam soluções criativas feitas sob medida. Problem solvers, innovators, demanding clients.
+
+**Valores Essenciais:**
+- **Cuidado** — for attentive, unique service
+- **Personalizado** — for customized solutions  
+- **Curado** — to bring right people and tools
+- **Colaboração** — to connect with right partners
+
+**Personalidade:**
+- Inspires a new way of thinking
+- Story teller ("Tem o que falar")
+- A world with more connection
+
+**Core Drivers:**
+1. **Problem Solver Soul** — Be recognized as someone who solves. Find simple, easy-to-apply solutions.
+2. **Co-lab Mindset** — Modern work approach. Connection with specific partners for specific problems.
+3. **Tech & AI as a Tool** — Strategic use without hiding behind tools. Extract the best from each.
+
+**Brand Tagline:** "Every challenge leads to a better way"
+
+**Manifesto:** "We believe in the intelligence of flow. Like water—flowing, contourning obstacles, finding the path of least resistance. We don't see obstacles, we see routes. Every problem finds its solution. Every challenge reveals its shortcut."
+
+**Experience Principles:**
+1. **Cumplicidade Criativa** (Creative Complicity) — Respect unique contexts, present outside-the-box solutions
+2. **Pensamento Ágil** (Agile Thinking) — Be highly adaptive, understand corporate culture, find shortcuts
+3. **Conexão Disruptiva** (Disruptive Connection) — Bring multidisciplinary profiles to find new angles
+
+**Visual Identity:**
+- **Colors:** Liquid Purple #5e42eb (primary) | Creative Red #fc263f (creativity) | Ocean Blue #041e32 (trust)
+- **Typography:** Glock Grotesk (headers/titles) | Open Sauce (body text)
+- **Brand Name:** Always lowercase: "liquid lab"
+
+**Brand Framework:**
+*"We are a lab boutique powered by an expert network. That offers innovative and customized creative solutions. For people who know exactly what they want."*
 
 ---
 
